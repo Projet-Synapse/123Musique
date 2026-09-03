@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput,
-  TouchableOpacity, KeyboardAvoidingView, Platform,
+  TouchableOpacity, KeyboardAvoidingView, Platform, ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -113,12 +113,15 @@ export default function EditTrackScreen() {
       borderBottomWidth: 1, borderBottomColor: colors.border,
     },
     playlistName: { flex: 1, fontSize: fontSize.md, color: colors.text },
-    checkbox: (checked: boolean) => ({
-      width: 24, height: 24, borderRadius: 6, borderWidth: 2,
-      borderColor: checked ? accent : colors.border,
-      backgroundColor: checked ? accent : 'transparent',
-      alignItems: 'center', justifyContent: 'center',
-    }),
+  });
+
+  // Kept outside StyleSheet.create: a function value mixed into that call collapses
+  // TypeScript's inference for every other style key in the same object.
+  const checkboxStyle = (checked: boolean): ViewStyle => ({
+    width: 24, height: 24, borderRadius: 6, borderWidth: 2,
+    borderColor: checked ? accent : colors.border,
+    backgroundColor: checked ? accent : 'transparent',
+    alignItems: 'center', justifyContent: 'center',
   });
 
   return (
@@ -186,7 +189,7 @@ export default function EditTrackScreen() {
                   onPress={() => inPl ? removeFromPlaylist(p.id, id) : addToPlaylist(p.id, id)}
                 >
                   <Text style={s.playlistName}>{p.name}</Text>
-                  <View style={s.checkbox(inPl)}>
+                  <View style={checkboxStyle(inPl)}>
                     {inPl && <MaterialIcons name="check" size={14} color="#FFF" />}
                   </View>
                 </TouchableOpacity>

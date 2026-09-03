@@ -13,7 +13,7 @@ import { useAlert } from '@/template';
 import { spacing, radius, fontSize } from '@/constants/theme';
 
 export default function PlaylistsScreen() {
-  const { colors, accent } = useTheme();
+  const { colors, accent, mode } = useTheme();
   const { playlists, createPlaylist, deletePlaylist, tracks } = useMusic();
   const { showAlert } = useAlert();
   const router = useRouter();
@@ -94,7 +94,7 @@ export default function PlaylistsScreen() {
 
   return (
     <View style={s.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle={mode === 'dark' ? 'light-content' : 'dark-content'} />
       <View style={s.header}>
         <View style={s.headerRow}>
           <Text style={s.title}>Playlists</Text>

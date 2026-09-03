@@ -6,10 +6,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
 import MiniPlayer from '@/components/feature/MiniPlayer';
 
-function TabBarWithMiniPlayer() {
-  return null;
-}
-
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const { colors, accent } = useTheme();

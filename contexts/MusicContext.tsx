@@ -1,6 +1,7 @@
 // Powered by OnSpace.AI
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from 'react-native';
 import { Audio } from 'expo-av';
 
 export interface Track {
@@ -175,6 +176,8 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       startPositionTracking();
     } catch (e) {
       console.error('Error playing track', e);
+      setIsPlaying(false);
+      Alert.alert('Lecture impossible', `Impossible de lire "${track.name}". Le fichier est peut-être corrompu ou dans un format non supporté.`);
     }
   };
 

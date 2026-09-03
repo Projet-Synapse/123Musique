@@ -1,8 +1,8 @@
 // Powered by OnSpace.AI
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  TextInput, StatusBar, Pressable,
+  TextInput, StatusBar, Pressable, ViewStyle, TextStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -14,15 +14,8 @@ import { useMusic, Track } from '@/contexts/MusicContext';
 import { useAlert } from '@/template';
 import { spacing, radius, fontSize } from '@/constants/theme';
 
-function formatDuration(ms: number) {
-  const total = Math.floor(ms / 1000);
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
 export default function LibraryScreen() {
-  const { colors, accent } = useTheme();
+  const { colors, accent, mode } = useTheme();
   const { tracks, addTrack, removeTrack, playTrack, currentTrack, isPlaying } = useMusic();
   const { showAlert } = useAlert();
   const router = useRouter();
@@ -30,17 +23,20 @@ export default function LibraryScreen() {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'artist' | 'date'>('date');
 
-  const filtered = tracks
-    .filter(t =>
-      t.name.toLowerCase().includes(search.toLowerCase()) ||
-      t.artist.toLowerCase().includes(search.toLowerCase()) ||
-      t.album.toLowerCase().includes(search.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (sortBy === 'name') return a.name.localeCompare(b.name);
-      if (sortBy === 'artist') return a.artist.localeCompare(b.artist);
-      return b.dateAdded - a.dateAdded;
-    });
+  const filtered = useMemo(() => {
+    const query = search.toLowerCase();
+    return tracks
+      .filter(t =>
+        t.name.toLowerCase().includes(query) ||
+        t.artist.toLowerCase().includes(query) ||
+        t.album.toLowerCase().includes(query)
+      )
+      .sort((a, b) => {
+        if (sortBy === 'name') return a.name.localeCompare(b.name);
+        if (sortBy === 'artist') return a.artist.localeCompare(b.artist);
+        return b.dateAdded - a.dateAdded;
+      });
+  }, [tracks, search, sortBy]);
 
   const importMusic = useCallback(async () => {
     try {
@@ -64,7 +60,7 @@ export default function LibraryScreen() {
         };
         addTrack(track);
       });
-    } catch (e) {
+    } catch {
       showAlert('Erreur', "Impossible d'importer ce fichier.");
     }
   }, [addTrack, showAlert]);
@@ -101,15 +97,6 @@ export default function LibraryScreen() {
     searchRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceElevated, borderRadius: radius.md, paddingHorizontal: spacing.sm, marginBottom: spacing.sm },
     searchInput: { flex: 1, color: colors.text, fontSize: fontSize.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.xs },
     sortRow: { flexDirection: 'row', gap: spacing.xs },
-    sortBtn: (active: boolean) => ({
-      paddingHorizontal: spacing.sm, paddingVertical: 5,
-      borderRadius: radius.full,
-      backgroundColor: active ? accent : colors.surfaceElevated,
-    }),
-    sortBtnText: (active: boolean) => ({
-      fontSize: fontSize.xs, fontWeight: '600',
-      color: active ? '#FFF' : colors.textSecondary,
-    }),
     trackItem: {
       flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border,
@@ -130,6 +117,18 @@ export default function LibraryScreen() {
     emptyTitle: { fontSize: fontSize.xl, fontWeight: '700', color: colors.text, marginBottom: spacing.sm, textAlign: 'center' },
     emptySubtitle: { fontSize: fontSize.md, color: colors.textSecondary, textAlign: 'center' },
     actionBtn: { padding: spacing.xs, marginLeft: 4 },
+  });
+
+  // Kept outside StyleSheet.create: a function value mixed into that call collapses
+  // TypeScript's inference for every other style key in the same object.
+  const sortBtnStyle = (active: boolean): ViewStyle => ({
+    paddingHorizontal: spacing.sm, paddingVertical: 5,
+    borderRadius: radius.full,
+    backgroundColor: active ? accent : colors.surfaceElevated,
+  });
+  const sortBtnTextStyle = (active: boolean): TextStyle => ({
+    fontSize: fontSize.xs, fontWeight: '600',
+    color: active ? '#FFF' : colors.textSecondary,
   });
 
   const renderTrack = ({ item }: { item: Track }) => {
@@ -153,10 +152,20 @@ export default function LibraryScreen() {
             {item.artist}{item.album !== 'Album inconnu' ? ` · ${item.album}` : ''}
           </Text>
         </View>
-        <TouchableOpacity style={s.actionBtn} onPress={() => router.push({ pathname: '/edit-track', params: { id: item.id } })}>
+        <TouchableOpacity
+          style={s.actionBtn}
+          onPress={() => router.push({ pathname: '/edit-track', params: { id: item.id } })}
+          accessibilityRole="button"
+          accessibilityLabel={`Modifier ${item.name}`}
+        >
           <MaterialIcons name="edit" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
-        <TouchableOpacity style={s.actionBtn} onPress={() => handleDelete(item)}>
+        <TouchableOpacity
+          style={s.actionBtn}
+          onPress={() => handleDelete(item)}
+          accessibilityRole="button"
+          accessibilityLabel={`Supprimer ${item.name}`}
+        >
           <MaterialIcons name="delete-outline" size={20} color={colors.textMuted} />
         </TouchableOpacity>
       </Pressable>
@@ -165,7 +174,7 @@ export default function LibraryScreen() {
 
   return (
     <View style={s.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle={mode === 'dark' ? 'light-content' : 'dark-content'} />
       <View style={s.header}>
         <View style={s.headerRow}>
           <Text style={s.title}>Bibliothèque</Text>
@@ -191,8 +200,8 @@ export default function LibraryScreen() {
         </View>
         <View style={s.sortRow}>
           {(['date', 'name', 'artist'] as const).map(k => (
-            <TouchableOpacity key={k} style={s.sortBtn(sortBy === k)} onPress={() => setSortBy(k)}>
-              <Text style={s.sortBtnText(sortBy === k)}>
+            <TouchableOpacity key={k} style={sortBtnStyle(sortBy === k)} onPress={() => setSortBy(k)}>
+              <Text style={sortBtnTextStyle(sortBy === k)}>
                 {k === 'date' ? 'Récent' : k === 'name' ? 'Nom' : 'Artiste'}
               </Text>
             </TouchableOpacity>

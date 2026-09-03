@@ -1,6 +1,6 @@
 // Powered by OnSpace.AI
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
@@ -33,16 +33,19 @@ export default function SettingsScreen() {
     rowLabel: { flex: 1, fontSize: fontSize.md, color: colors.text, fontWeight: '500' },
     rowValue: { fontSize: fontSize.sm, color: colors.textSecondary },
     accentRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', padding: spacing.md },
-    accentDot: (color: string, active: boolean) => ({
-      width: 36, height: 36, borderRadius: 18, backgroundColor: color,
-      alignItems: 'center', justifyContent: 'center',
-      borderWidth: active ? 2 : 0, borderColor: '#FFF',
-    }),
     stat: { flex: 1, alignItems: 'center', paddingVertical: spacing.md },
     statValue: { fontSize: fontSize.xxxl, fontWeight: '700', color: accent },
     statLabel: { fontSize: fontSize.xs, color: colors.textSecondary },
     divider: { width: 1, backgroundColor: colors.border, marginVertical: spacing.sm },
     statsRow: { flexDirection: 'row' },
+  });
+
+  // Kept outside StyleSheet.create: a function value mixed into that call collapses
+  // TypeScript's inference for every other style key in the same object.
+  const accentDotStyle = (color: string, active: boolean): ViewStyle => ({
+    width: 36, height: 36, borderRadius: 18, backgroundColor: color,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: active ? 2 : 0, borderColor: '#FFF',
   });
 
   return (
@@ -95,13 +98,13 @@ export default function SettingsScreen() {
                 <View style={[s.rowIcon, { backgroundColor: accent + '22' }]}>
                   <MaterialIcons name="palette" size={20} color={accent} />
                 </View>
-                <Text style={s.rowLabel}>Couleur d'accent</Text>
+                <Text style={s.rowLabel}>Couleur d&apos;accent</Text>
               </View>
               <View style={s.accentRow}>
                 {ACCENT_OPTIONS.map(opt => (
                   <TouchableOpacity
                     key={opt.value}
-                    style={s.accentDot(opt.value, accent === opt.value)}
+                    style={accentDotStyle(opt.value, accent === opt.value)}
                     onPress={() => setAccent(opt.value)}
                   >
                     {accent === opt.value && <MaterialIcons name="check" size={18} color="#FFF" />}

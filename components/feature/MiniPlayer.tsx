@@ -54,7 +54,12 @@ export default function MiniPlayer() {
   });
 
   return (
-    <Pressable style={s.container} onPress={() => router.push('/player')}>
+    <Pressable
+      style={s.container}
+      onPress={() => router.push('/player')}
+      accessibilityRole="button"
+      accessibilityLabel={`Ouvrir le lecteur — ${currentTrack.name}`}
+    >
       {currentTrack.artworkUri ? (
         <Image source={{ uri: currentTrack.artworkUri }} style={s.artwork} contentFit="cover" />
       ) : (
@@ -69,13 +74,17 @@ export default function MiniPlayer() {
       <View style={s.controls}>
         <TouchableOpacity
           style={s.playBtn}
-          onPress={e => { e.stopPropagation(); isPlaying ? pauseTrack() : resumeTrack(); }}
+          onPress={e => { e.stopPropagation(); if (isPlaying) pauseTrack(); else resumeTrack(); }}
+          accessibilityRole="button"
+          accessibilityLabel={isPlaying ? 'Mettre en pause' : 'Lire'}
         >
           <MaterialIcons name={isPlaying ? 'pause' : 'play-arrow'} size={22} color="#FFF" />
         </TouchableOpacity>
         <TouchableOpacity
           style={s.skipBtn}
           onPress={e => { e.stopPropagation(); nextTrack(); }}
+          accessibilityRole="button"
+          accessibilityLabel="Piste suivante"
         >
           <MaterialIcons name="skip-next" size={26} color={colors.text} />
         </TouchableOpacity>

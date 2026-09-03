@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  StatusBar, Dimensions,
+  StatusBar, Dimensions, ViewStyle, TextStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -26,7 +26,7 @@ const TABS = ['Lecture', 'Effets', 'Info'] as const;
 type Tab = typeof TABS[number];
 
 export default function PlayerScreen() {
-  const { colors, accent } = useTheme();
+  const { colors, accent, mode } = useTheme();
   const { currentTrack, isPlaying, position, duration, pauseTrack, resumeTrack, seekTo, nextTrack, prevTrack, effects, setEffects } = useMusic();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -72,14 +72,6 @@ export default function PlayerScreen() {
       alignItems: 'center', justifyContent: 'center',
     },
     tabs: { flexDirection: 'row', paddingHorizontal: spacing.md, marginTop: spacing.xl, borderBottomWidth: 1, borderBottomColor: colors.border },
-    tab: (active: boolean) => ({
-      flex: 1, paddingVertical: spacing.sm, alignItems: 'center',
-      borderBottomWidth: 2, borderBottomColor: active ? accent : 'transparent',
-    }),
-    tabText: (active: boolean) => ({
-      fontSize: fontSize.sm, fontWeight: '600',
-      color: active ? accent : colors.textSecondary,
-    }),
     tabContent: { flex: 1, padding: spacing.md },
     effectRow: { marginBottom: spacing.lg },
     effectLabel: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs },
@@ -100,6 +92,18 @@ export default function PlayerScreen() {
     infoRow: { flexDirection: 'row', paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border },
     infoKey: { width: 90, fontSize: fontSize.sm, color: colors.textSecondary, fontWeight: '500' },
     infoVal: { flex: 1, fontSize: fontSize.sm, color: colors.text },
+    effectNote: { fontSize: fontSize.xs, color: colors.textMuted, marginTop: spacing.xs, fontStyle: 'italic' },
+  });
+
+  // Kept outside StyleSheet.create: a function value mixed into that call collapses
+  // TypeScript's inference for every other style key in the same object.
+  const tabStyle = (active: boolean): ViewStyle => ({
+    flex: 1, paddingVertical: spacing.sm, alignItems: 'center',
+    borderBottomWidth: 2, borderBottomColor: active ? accent : 'transparent',
+  });
+  const tabTextStyle = (active: boolean): TextStyle => ({
+    fontSize: fontSize.sm, fontWeight: '600',
+    color: active ? accent : colors.textSecondary,
   });
 
   const renderEffects = () => (
@@ -121,13 +125,14 @@ export default function PlayerScreen() {
           thumbTintColor={accent}
         />
       </View>
-      {/* Pitch */}
+      {/* Pitch — not yet wired to the audio engine, see note below */}
       <View style={s.effectRow}>
         <View style={s.effectLabel}>
           <Text style={s.effectName}>Hauteur (semitones)</Text>
           <Text style={s.effectValue}>{effects.pitch > 0 ? '+' : ''}{effects.pitch}</Text>
         </View>
         <Slider
+          disabled
           minimumValue={-12}
           maximumValue={12}
           step={1}
@@ -137,14 +142,16 @@ export default function PlayerScreen() {
           maximumTrackTintColor={colors.border}
           thumbTintColor={accent}
         />
+        <Text style={s.effectNote}>Bientôt disponible — sans effet sur le son pour le moment.</Text>
       </View>
-      {/* Reverb */}
+      {/* Reverb — not yet wired to the audio engine, see note below */}
       <View style={s.effectRow}>
         <View style={s.effectLabel}>
           <Text style={s.effectName}>Réverbération</Text>
           <Text style={s.effectValue}>{Math.round(effects.reverb * 100)}%</Text>
         </View>
         <Slider
+          disabled
           minimumValue={0}
           maximumValue={1}
           step={0.01}
@@ -154,12 +161,13 @@ export default function PlayerScreen() {
           maximumTrackTintColor={colors.border}
           thumbTintColor={accent}
         />
+        <Text style={s.effectNote}>Bientôt disponible — sans effet sur le son pour le moment.</Text>
       </View>
       {/* AI Separation */}
       <View style={s.aiCard}>
-        <Text style={s.aiTitle}>Séparation d'instruments IA</Text>
+        <Text style={s.aiTitle}>Séparation d&apos;instruments IA</Text>
         <Text style={s.aiDesc}>
-          Isolez voix, guitare, basse, batterie et plus encore grâce à l'intelligence artificielle.
+          Isolez voix, guitare, basse, batterie et plus encore grâce à l&apos;intelligence artificielle.
         </Text>
         <TouchableOpacity style={s.aiBtn} onPress={() => {}}>
           <Text style={s.aiBtnText}>Bientôt disponible</Text>
@@ -187,10 +195,15 @@ export default function PlayerScreen() {
 
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle={mode === 'dark' ? 'light-content' : 'dark-content'} />
       <View style={s.handle} />
       <View style={s.closeRow}>
-        <TouchableOpacity style={s.closeBtn} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={s.closeBtn}
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Fermer le lecteur"
+        >
           <MaterialIcons name="keyboard-arrow-down" size={22} color={colors.text} />
         </TouchableOpacity>
         <Text style={s.headerTitle}>En lecture</Text>
@@ -227,21 +240,26 @@ export default function PlayerScreen() {
       </View>
 
       <View style={s.controls}>
-        <TouchableOpacity onPress={prevTrack}>
+        <TouchableOpacity onPress={prevTrack} accessibilityRole="button" accessibilityLabel="Piste précédente">
           <MaterialIcons name="skip-previous" size={40} color={colors.text} />
         </TouchableOpacity>
-        <TouchableOpacity style={s.playBtn} onPress={isPlaying ? pauseTrack : resumeTrack}>
+        <TouchableOpacity
+          style={s.playBtn}
+          onPress={() => { if (isPlaying) pauseTrack(); else resumeTrack(); }}
+          accessibilityRole="button"
+          accessibilityLabel={isPlaying ? 'Mettre en pause' : 'Lire'}
+        >
           <MaterialIcons name={isPlaying ? 'pause' : 'play-arrow'} size={38} color="#FFF" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={nextTrack}>
+        <TouchableOpacity onPress={nextTrack} accessibilityRole="button" accessibilityLabel="Piste suivante">
           <MaterialIcons name="skip-next" size={40} color={colors.text} />
         </TouchableOpacity>
       </View>
 
       <View style={s.tabs}>
         {TABS.map(tab => (
-          <TouchableOpacity key={tab} style={s.tab(activeTab === tab)} onPress={() => setActiveTab(tab)}>
-            <Text style={s.tabText(activeTab === tab)}>{tab}</Text>
+          <TouchableOpacity key={tab} style={tabStyle(activeTab === tab)} onPress={() => setActiveTab(tab)}>
+            <Text style={tabTextStyle(activeTab === tab)}>{tab}</Text>
           </TouchableOpacity>
         ))}
       </View>

@@ -10,13 +10,11 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@/hooks/useTheme';
 import { useMusic, Track } from '@/contexts/MusicContext';
-import { useAlert } from '@/template';
 import { spacing, radius, fontSize } from '@/constants/theme';
 
 export default function PlaylistDetailScreen() {
   const { colors, accent } = useTheme();
   const { playlists, tracks, renamePlaylist, removeFromPlaylist, addToPlaylist, playTrack } = useMusic();
-  const { showAlert } = useAlert();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
