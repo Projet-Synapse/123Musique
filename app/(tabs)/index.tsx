@@ -2,7 +2,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  TextInput, StatusBar, Pressable, ViewStyle, TextStyle,
+  TextInput, StatusBar, Pressable, ViewStyle, TextStyle, Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -16,12 +16,17 @@ import { spacing, radius, fontSize } from '@/constants/theme';
 
 export default function LibraryScreen() {
   const { colors, accent, mode } = useTheme();
-  const { tracks, addTrack, removeTrack, playTrack, currentTrack, isPlaying } = useMusic();
+  const {
+    tracks, addTrack, removeTrack, playTrack, currentTrack, isPlaying,
+    playlists, addToPlaylist, removeFromPlaylist, createPlaylist,
+  } = useMusic();
   const { showAlert } = useAlert();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'artist' | 'date'>('date');
+  const [playlistPickerTrack, setPlaylistPickerTrack] = useState<Track | null>(null);
+  const [newPlaylistName, setNewPlaylistName] = useState('');
 
   const filtered = useMemo(() => {
     const query = search.toLowerCase();
@@ -64,6 +69,19 @@ export default function LibraryScreen() {
       showAlert('Erreur', "Impossible d'importer ce fichier.");
     }
   }, [addTrack, showAlert]);
+
+  const closePlaylistPicker = () => {
+    setPlaylistPickerTrack(null);
+    setNewPlaylistName('');
+  };
+
+  const handleCreatePlaylistAndAdd = () => {
+    const name = newPlaylistName.trim();
+    if (!name || !playlistPickerTrack) return;
+    const id = createPlaylist(name);
+    addToPlaylist(id, playlistPickerTrack.id);
+    setNewPlaylistName('');
+  };
 
   const handleDelete = (track: Track) => {
     showAlert(
@@ -117,6 +135,34 @@ export default function LibraryScreen() {
     emptyTitle: { fontSize: fontSize.xl, fontWeight: '700', color: colors.text, marginBottom: spacing.sm, textAlign: 'center' },
     emptySubtitle: { fontSize: fontSize.md, color: colors.textSecondary, textAlign: 'center' },
     actionBtn: { padding: spacing.xs, marginLeft: 4 },
+    modal: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+    sheet: {
+      backgroundColor: colors.surface, borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl, padding: spacing.md,
+      paddingBottom: insets.bottom + spacing.lg, maxHeight: '75%',
+    },
+    sheetTitle: { fontSize: fontSize.lg, fontWeight: '700', color: colors.text, marginBottom: spacing.sm },
+    sheetSubtitle: { fontSize: fontSize.sm, color: colors.textSecondary, paddingVertical: spacing.md },
+    playlistRow: {
+      flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+      paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border,
+    },
+    playlistRowText: { flex: 1, fontSize: fontSize.md, color: colors.text },
+    newPlaylistRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md, alignItems: 'center' },
+    newPlaylistInput: {
+      flex: 1, backgroundColor: colors.surfaceElevated, borderRadius: radius.md,
+      padding: spacing.sm, color: colors.text, fontSize: fontSize.md,
+      borderWidth: 1, borderColor: colors.border,
+    },
+    newPlaylistBtn: {
+      width: 40, height: 40, borderRadius: 20, backgroundColor: accent,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    doneBtn: {
+      marginTop: spacing.md, padding: spacing.md, borderRadius: radius.md,
+      backgroundColor: colors.surfaceElevated, alignItems: 'center',
+    },
+    doneBtnText: { color: colors.textSecondary, fontWeight: '600' },
   });
 
   // Kept outside StyleSheet.create: a function value mixed into that call collapses
@@ -152,6 +198,14 @@ export default function LibraryScreen() {
             {item.artist}{item.album !== 'Album inconnu' ? ` · ${item.album}` : ''}
           </Text>
         </View>
+        <TouchableOpacity
+          style={s.actionBtn}
+          onPress={() => setPlaylistPickerTrack(item)}
+          accessibilityRole="button"
+          accessibilityLabel={`Ajouter ${item.name} à une playlist`}
+        >
+          <MaterialIcons name="playlist-add" size={22} color={colors.textSecondary} />
+        </TouchableOpacity>
         <TouchableOpacity
           style={s.actionBtn}
           onPress={() => router.push({ pathname: '/edit-track', params: { id: item.id } })}
@@ -224,6 +278,66 @@ export default function LibraryScreen() {
           showsVerticalScrollIndicator={false}
         />
       )}
+
+      <Modal visible={!!playlistPickerTrack} transparent animationType="slide" onRequestClose={closePlaylistPicker}>
+        <View style={s.modal}>
+          <View style={s.sheet}>
+            <Text style={s.sheetTitle} numberOfLines={1}>
+              Ajouter « {playlistPickerTrack?.name} » à…
+            </Text>
+            {playlists.length === 0 ? (
+              <Text style={s.sheetSubtitle}>Aucune playlist pour l&apos;instant. Créez-en une ci-dessous.</Text>
+            ) : (
+              <FlatList
+                data={playlists}
+                keyExtractor={p => p.id}
+                renderItem={({ item: p }) => {
+                  const included = !!playlistPickerTrack && p.trackIds.includes(playlistPickerTrack.id);
+                  return (
+                    <TouchableOpacity
+                      style={s.playlistRow}
+                      onPress={() => {
+                        if (!playlistPickerTrack) return;
+                        if (included) removeFromPlaylist(p.id, playlistPickerTrack.id);
+                        else addToPlaylist(p.id, playlistPickerTrack.id);
+                      }}
+                    >
+                      <MaterialIcons
+                        name={included ? 'check-box' : 'check-box-outline-blank'}
+                        size={22}
+                        color={included ? accent : colors.textMuted}
+                      />
+                      <Text style={s.playlistRowText} numberOfLines={1}>{p.name}</Text>
+                    </TouchableOpacity>
+                  );
+                }}
+              />
+            )}
+            <View style={s.newPlaylistRow}>
+              <TextInput
+                style={s.newPlaylistInput}
+                placeholder="Nouvelle playlist…"
+                placeholderTextColor={colors.textMuted}
+                value={newPlaylistName}
+                onChangeText={setNewPlaylistName}
+                onSubmitEditing={handleCreatePlaylistAndAdd}
+                returnKeyType="done"
+              />
+              <TouchableOpacity
+                style={s.newPlaylistBtn}
+                onPress={handleCreatePlaylistAndAdd}
+                accessibilityRole="button"
+                accessibilityLabel="Créer la playlist et y ajouter le titre"
+              >
+                <MaterialIcons name="add" size={20} color="#FFF" />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={s.doneBtn} onPress={closePlaylistPicker}>
+              <Text style={s.doneBtnText}>Fermer</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

@@ -27,7 +27,10 @@ type Tab = typeof TABS[number];
 
 export default function PlayerScreen() {
   const { colors, accent, mode } = useTheme();
-  const { currentTrack, isPlaying, position, duration, pauseTrack, resumeTrack, seekTo, nextTrack, prevTrack, effects, setEffects } = useMusic();
+  const {
+    currentTrack, isPlaying, position, duration, pauseTrack, resumeTrack, seekTo, nextTrack, prevTrack,
+    effects, setEffects, shuffle, repeatMode, toggleShuffle, cycleRepeatMode,
+  } = useMusic();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<Tab>('Lecture');
@@ -66,7 +69,12 @@ export default function PlayerScreen() {
     sliderRow: { paddingHorizontal: spacing.lg, marginTop: spacing.md },
     timeRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.lg },
     timeText: { fontSize: fontSize.xs, color: colors.textMuted },
-    controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xl, marginTop: spacing.lg },
+    controls: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      paddingHorizontal: spacing.xl, marginTop: spacing.lg,
+    },
+    mainControls: { flexDirection: 'row', alignItems: 'center', gap: spacing.xl },
+    modeBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
     playBtn: {
       width: 70, height: 70, borderRadius: 35, backgroundColor: accent,
       alignItems: 'center', justifyContent: 'center',
@@ -240,19 +248,43 @@ export default function PlayerScreen() {
       </View>
 
       <View style={s.controls}>
-        <TouchableOpacity onPress={prevTrack} accessibilityRole="button" accessibilityLabel="Piste précédente">
-          <MaterialIcons name="skip-previous" size={40} color={colors.text} />
-        </TouchableOpacity>
         <TouchableOpacity
-          style={s.playBtn}
-          onPress={() => { if (isPlaying) pauseTrack(); else resumeTrack(); }}
+          style={s.modeBtn}
+          onPress={toggleShuffle}
           accessibilityRole="button"
-          accessibilityLabel={isPlaying ? 'Mettre en pause' : 'Lire'}
+          accessibilityLabel={shuffle ? 'Désactiver la lecture aléatoire' : 'Activer la lecture aléatoire'}
         >
-          <MaterialIcons name={isPlaying ? 'pause' : 'play-arrow'} size={38} color="#FFF" />
+          <MaterialIcons name="shuffle" size={22} color={shuffle ? accent : colors.textMuted} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={nextTrack} accessibilityRole="button" accessibilityLabel="Piste suivante">
-          <MaterialIcons name="skip-next" size={40} color={colors.text} />
+        <View style={s.mainControls}>
+          <TouchableOpacity onPress={() => prevTrack()} accessibilityRole="button" accessibilityLabel="Piste précédente">
+            <MaterialIcons name="skip-previous" size={40} color={colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={s.playBtn}
+            onPress={() => { if (isPlaying) pauseTrack(); else resumeTrack(); }}
+            accessibilityRole="button"
+            accessibilityLabel={isPlaying ? 'Mettre en pause' : 'Lire'}
+          >
+            <MaterialIcons name={isPlaying ? 'pause' : 'play-arrow'} size={38} color="#FFF" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => nextTrack()} accessibilityRole="button" accessibilityLabel="Piste suivante">
+            <MaterialIcons name="skip-next" size={40} color={colors.text} />
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity
+          style={s.modeBtn}
+          onPress={cycleRepeatMode}
+          accessibilityRole="button"
+          accessibilityLabel={
+            repeatMode === 'off' ? 'Activer la répétition' : repeatMode === 'all' ? 'Répéter uniquement ce titre' : 'Désactiver la répétition'
+          }
+        >
+          <MaterialIcons
+            name={repeatMode === 'one' ? 'repeat-one' : 'repeat'}
+            size={22}
+            color={repeatMode !== 'off' ? accent : colors.textMuted}
+          />
         </TouchableOpacity>
       </View>
 

@@ -30,6 +30,8 @@ export interface AudioEffects {
   reverb: number;
 }
 
+export type RepeatMode = 'off' | 'all' | 'one';
+
 interface MusicContextType {
   tracks: Track[];
   playlists: Playlist[];
@@ -38,6 +40,8 @@ interface MusicContextType {
   position: number;
   duration: number;
   effects: AudioEffects;
+  shuffle: boolean;
+  repeatMode: RepeatMode;
   addTrack: (track: Track) => void;
   removeTrack: (id: string) => void;
   updateTrack: (id: string, updates: Partial<Track>) => void;
@@ -45,9 +49,11 @@ interface MusicContextType {
   pauseTrack: () => void;
   resumeTrack: () => void;
   seekTo: (ms: number) => void;
-  nextTrack: () => void;
+  nextTrack: (auto?: boolean) => void;
   prevTrack: () => void;
-  createPlaylist: (name: string) => void;
+  toggleShuffle: () => void;
+  cycleRepeatMode: () => void;
+  createPlaylist: (name: string) => string;
   deletePlaylist: (id: string) => void;
   renamePlaylist: (id: string, name: string) => void;
   addToPlaylist: (playlistId: string, trackId: string) => void;
@@ -76,8 +82,17 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   const [duration, setDuration] = useState(0);
   const [queue, setQueue] = useState<Track[]>([]);
   const [effects, setEffectsState] = useState<AudioEffects>({ speed: 1, pitch: 0, reverb: 0 });
+  const [shuffle, setShuffle] = useState(false);
+  const [repeatMode, setRepeatMode] = useState<RepeatMode>('all');
   const soundRef = useRef<Audio.Sound | null>(null);
   const positionInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Refs mirror shuffle/repeatMode so the position-tracking interval — whose
+  // closure is captured once per track and outlives re-renders — always acts
+  // on the latest mode instead of the one active when the track started.
+  const shuffleRef = useRef(shuffle);
+  const repeatModeRef = useRef(repeatMode);
+  useEffect(() => { shuffleRef.current = shuffle; }, [shuffle]);
+  useEffect(() => { repeatModeRef.current = repeatMode; }, [repeatMode]);
 
   useEffect(() => {
     Audio.setAudioModeAsync({
@@ -148,7 +163,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
           setPosition(status.positionMillis);
           setDuration(status.durationMillis ?? 0);
           if (status.didJustFinish) {
-            nextTrack();
+            nextTrack(true);
           }
         }
       }
@@ -198,19 +213,46 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     setPosition(ms);
   };
 
-  const nextTrack = () => {
+  // `auto` distinguishes the natural end-of-track advance (which must honor
+  // repeat mode) from a manual tap on the "next" control (which always moves
+  // the queue forward, regardless of repeat mode).
+  const nextTrack = (auto = false) => {
     if (!currentTrack || queue.length === 0) return;
+    if (auto && repeatModeRef.current === 'one') {
+      playTrack(currentTrack, queue);
+      return;
+    }
     const idx = queue.findIndex(t => t.id === currentTrack.id);
+    if (shuffleRef.current && queue.length > 1) {
+      let randIdx = idx;
+      while (randIdx === idx) randIdx = Math.floor(Math.random() * queue.length);
+      playTrack(queue[randIdx], queue);
+      return;
+    }
+    const isLast = idx === queue.length - 1;
+    if (auto && isLast && repeatModeRef.current === 'off') {
+      pauseTrack();
+      return;
+    }
     const next = queue[(idx + 1) % queue.length];
     if (next) playTrack(next, queue);
   };
 
   const prevTrack = () => {
     if (!currentTrack || queue.length === 0) return;
+    // Mirrors the convention of most music players: restart the current
+    // track once you're a few seconds in, rather than always jumping back.
+    if (position > 3000) {
+      seekTo(0);
+      return;
+    }
     const idx = queue.findIndex(t => t.id === currentTrack.id);
     const prev = queue[(idx - 1 + queue.length) % queue.length];
     if (prev) playTrack(prev, queue);
   };
+
+  const toggleShuffle = () => setShuffle(s => !s);
+  const cycleRepeatMode = () => setRepeatMode(m => (m === 'off' ? 'all' : m === 'all' ? 'one' : 'off'));
 
   const createPlaylist = (name: string) => {
     const p: Playlist = { id: Date.now().toString(), name, trackIds: [], createdAt: Date.now() };
@@ -219,6 +261,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       savePlaylists(next);
       return next;
     });
+    return p.id;
   };
 
   const deletePlaylist = (id: string) => {
@@ -272,8 +315,10 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   return (
     <MusicContext.Provider value={{
       tracks, playlists, currentTrack, isPlaying, position, duration, queue, effects,
+      shuffle, repeatMode,
       addTrack, removeTrack, updateTrack,
       playTrack, pauseTrack, resumeTrack, seekTo, nextTrack, prevTrack,
+      toggleShuffle, cycleRepeatMode,
       createPlaylist, deletePlaylist, renamePlaylist, addToPlaylist, removeFromPlaylist,
       setEffects,
     }}>
