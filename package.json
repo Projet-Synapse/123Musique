@@ -96,7 +96,7 @@
     "expo-gl": "~15.1.7",
     "expo-localization": "~16.1.6",
     "expo-navigation-bar": "~4.2.7",
-    "expo-print": "~14.1.4",
+    "expo-print": "~57.0.1",
     "expo-screen-capture": "~7.1.5",
     "expo-speech": "~13.1.7",
     "react-native-crypto-js": "^1.0.0",
