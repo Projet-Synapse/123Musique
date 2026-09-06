@@ -19,6 +19,7 @@ export default function LibraryScreen() {
   const {
     tracks, addTrack, removeTrack, playTrack, currentTrack, isPlaying,
     playlists, addToPlaylist, removeFromPlaylist, createPlaylist,
+    shuffle, toggleShuffle,
   } = useMusic();
   const { showAlert } = useAlert();
   const router = useRouter();
@@ -42,6 +43,18 @@ export default function LibraryScreen() {
         return b.dateAdded - a.dateAdded;
       });
   }, [tracks, search, sortBy]);
+
+  const playAll = useCallback(() => {
+    if (filtered.length === 0) return;
+    playTrack(filtered[0], filtered);
+  }, [filtered, playTrack]);
+
+  const shufflePlayAll = useCallback(() => {
+    if (filtered.length === 0) return;
+    if (!shuffle) toggleShuffle();
+    const randIdx = Math.floor(Math.random() * filtered.length);
+    playTrack(filtered[randIdx], filtered);
+  }, [filtered, playTrack, shuffle, toggleShuffle]);
 
   const importMusic = useCallback(async () => {
     try {
@@ -115,6 +128,13 @@ export default function LibraryScreen() {
     searchRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceElevated, borderRadius: radius.md, paddingHorizontal: spacing.sm, marginBottom: spacing.sm },
     searchInput: { flex: 1, color: colors.text, fontSize: fontSize.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.xs },
     sortRow: { flexDirection: 'row', gap: spacing.xs },
+    quickActionsRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+    quickActionBtn: {
+      flexDirection: 'row', alignItems: 'center', gap: 4,
+      paddingHorizontal: spacing.sm, paddingVertical: 6,
+      borderRadius: radius.full, backgroundColor: colors.surfaceElevated,
+    },
+    quickActionText: { fontSize: fontSize.xs, fontWeight: '600', color: accent },
     trackItem: {
       flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border,
@@ -133,7 +153,13 @@ export default function LibraryScreen() {
     emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xxl },
     emptyImage: { width: 180, height: 180, marginBottom: spacing.lg },
     emptyTitle: { fontSize: fontSize.xl, fontWeight: '700', color: colors.text, marginBottom: spacing.sm, textAlign: 'center' },
-    emptySubtitle: { fontSize: fontSize.md, color: colors.textSecondary, textAlign: 'center' },
+    emptySubtitle: { fontSize: fontSize.md, color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.lg },
+    emptyImportBtn: {
+      flexDirection: 'row', alignItems: 'center', backgroundColor: accent,
+      paddingHorizontal: spacing.lg, paddingVertical: spacing.sm,
+      borderRadius: radius.full, gap: 6,
+    },
+    emptyImportBtnText: { color: '#FFF', fontWeight: '700', fontSize: fontSize.sm },
     actionBtn: { padding: spacing.xs, marginLeft: 4 },
     modal: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
     sheet: {
@@ -261,6 +287,28 @@ export default function LibraryScreen() {
             </TouchableOpacity>
           ))}
         </View>
+        {filtered.length > 0 && (
+          <View style={s.quickActionsRow}>
+            <TouchableOpacity
+              style={s.quickActionBtn}
+              onPress={playAll}
+              accessibilityRole="button"
+              accessibilityLabel="Tout lire"
+            >
+              <MaterialIcons name="play-arrow" size={18} color={accent} />
+              <Text style={s.quickActionText}>Tout lire</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={s.quickActionBtn}
+              onPress={shufflePlayAll}
+              accessibilityRole="button"
+              accessibilityLabel="Lecture aléatoire"
+            >
+              <MaterialIcons name="shuffle" size={18} color={accent} />
+              <Text style={s.quickActionText}>Aléatoire</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       {tracks.length === 0 ? (
@@ -268,6 +316,10 @@ export default function LibraryScreen() {
           <Image source={require('@/assets/images/empty-music.png')} style={s.emptyImage} contentFit="contain" />
           <Text style={s.emptyTitle}>Aucune musique</Text>
           <Text style={s.emptySubtitle}>Importez vos fichiers MP3 ou audio depuis votre appareil.</Text>
+          <TouchableOpacity style={s.emptyImportBtn} onPress={importMusic}>
+            <MaterialIcons name="add" size={18} color="#FFF" />
+            <Text style={s.emptyImportBtnText}>Importer de la musique</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList

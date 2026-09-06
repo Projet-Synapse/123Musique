@@ -23,6 +23,7 @@ export default function PlaylistDetailScreen() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showRename, setShowRename] = useState(false);
   const [newName, setNewName] = useState('');
+  const [addSearch, setAddSearch] = useState('');
 
   if (!playlist) {
     router.back();
@@ -34,6 +35,19 @@ export default function PlaylistDetailScreen() {
     .filter(Boolean) as Track[];
 
   const availableToAdd = tracks.filter(t => !playlist.trackIds.includes(t.id));
+  const addQuery = addSearch.toLowerCase();
+  const filteredAvailable = availableToAdd.filter(t =>
+    t.name.toLowerCase().includes(addQuery) || t.artist.toLowerCase().includes(addQuery)
+  );
+
+  const closeAddModal = () => {
+    setShowAddModal(false);
+    setAddSearch('');
+  };
+
+  const handleAddAll = () => {
+    filteredAvailable.forEach(t => addToPlaylist(id, t.id));
+  };
 
   const handleRename = () => {
     if (!newName.trim()) return;
@@ -84,6 +98,13 @@ export default function PlaylistDetailScreen() {
       paddingBottom: insets.bottom + spacing.lg, maxHeight: '70%',
     },
     sheetTitle: { fontSize: fontSize.lg, fontWeight: '700', color: colors.text, marginBottom: spacing.sm },
+    sheetHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    addAllText: { fontSize: fontSize.sm, fontWeight: '700', color: accent },
+    searchRow: {
+      flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceElevated,
+      borderRadius: radius.md, paddingHorizontal: spacing.sm, marginBottom: spacing.sm,
+    },
+    searchInput: { flex: 1, color: colors.text, fontSize: fontSize.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.xs },
     sheetTrack: {
       flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm,
       borderBottomWidth: 1, borderBottomColor: colors.border,
@@ -120,7 +141,7 @@ export default function PlaylistDetailScreen() {
             <Text style={s.playAllText}>Lire tout</Text>
           </TouchableOpacity>
         )}
-        <TouchableOpacity style={s.addBtn} onPress={() => setShowAddModal(true)}>
+        <TouchableOpacity style={s.addBtn} onPress={() => { setAddSearch(''); setShowAddModal(true); }}>
           <MaterialIcons name="add" size={20} color="#FFF" />
         </TouchableOpacity>
       </View>
@@ -157,15 +178,41 @@ export default function PlaylistDetailScreen() {
       )}
 
       {/* Add tracks modal */}
-      <Modal visible={showAddModal} transparent animationType="slide">
+      <Modal visible={showAddModal} transparent animationType="slide" onRequestClose={closeAddModal}>
         <View style={s.modal}>
           <View style={s.sheet}>
-            <Text style={s.sheetTitle}>Ajouter à la playlist</Text>
+            <View style={s.sheetHeaderRow}>
+              <Text style={s.sheetTitle}>Ajouter à la playlist</Text>
+              {filteredAvailable.length > 0 && (
+                <TouchableOpacity onPress={handleAddAll}>
+                  <Text style={s.addAllText}>Tout ajouter ({filteredAvailable.length})</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            {availableToAdd.length > 0 && (
+              <View style={s.searchRow}>
+                <MaterialIcons name="search" size={18} color={colors.textMuted} />
+                <TextInput
+                  style={s.searchInput}
+                  placeholder="Rechercher..."
+                  placeholderTextColor={colors.textMuted}
+                  value={addSearch}
+                  onChangeText={setAddSearch}
+                />
+                {addSearch.length > 0 && (
+                  <TouchableOpacity onPress={() => setAddSearch('')}>
+                    <MaterialIcons name="close" size={16} color={colors.textMuted} />
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
             {availableToAdd.length === 0 ? (
               <Text style={{ color: colors.textSecondary, padding: spacing.md }}>Toutes les musiques sont déjà dans cette playlist.</Text>
+            ) : filteredAvailable.length === 0 ? (
+              <Text style={{ color: colors.textSecondary, padding: spacing.md }}>Aucun résultat.</Text>
             ) : (
               <FlatList
-                data={availableToAdd}
+                data={filteredAvailable}
                 keyExtractor={item => item.id}
                 renderItem={({ item }) => (
                   <TouchableOpacity style={s.sheetTrack} onPress={() => { addToPlaylist(id, item.id); }}>
@@ -175,7 +222,7 @@ export default function PlaylistDetailScreen() {
                 )}
               />
             )}
-            <TouchableOpacity style={[s.cancelBtn, { marginTop: spacing.md }]} onPress={() => setShowAddModal(false)}>
+            <TouchableOpacity style={[s.cancelBtn, { marginTop: spacing.md }]} onPress={closeAddModal}>
               <Text style={s.cancelText}>Fermer</Text>
             </TouchableOpacity>
           </View>
