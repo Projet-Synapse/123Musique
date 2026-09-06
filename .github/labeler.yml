@@ -1,0 +1,34 @@
+# Configuration for .github/workflows/label.yml (actions/labeler@v4).
+# Applies a label based on paths modified in the pull request.
+
+app:
+  - app/**/*
+
+assets:
+  - assets/**/*
+
+components:
+  - components/**/*
+
+constants:
+  - constants/**/*
+
+contexts-hooks:
+  - contexts/**/*
+  - hooks/**/*
+
+scripts:
+  - scripts/**/*
+
+template:
+  - template/**/*
+
+ci:
+  - .github/**/*
+
+dependencies:
+  - package.json
+  - pnpm-lock.yaml
+
+documentation:
+  - '**/*.md'
