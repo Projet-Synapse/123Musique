@@ -127,17 +127,32 @@ export default function EditTrackScreen() {
   return (
     <KeyboardAvoidingView style={s.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={s.header}>
-        <TouchableOpacity style={s.headerBtn} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={s.headerBtn}
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Fermer sans sauvegarder"
+        >
           <MaterialIcons name="close" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={s.headerTitle}>Modifier</Text>
-        <TouchableOpacity style={s.saveBtn} onPress={handleSave}>
+        <TouchableOpacity
+          style={s.saveBtn}
+          onPress={handleSave}
+          accessibilityRole="button"
+          accessibilityLabel="Sauvegarder"
+        >
           <Text style={s.saveBtnText}>Sauvegarder</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-        <TouchableOpacity style={s.artworkBtn} onPress={pickArtwork}>
+        <TouchableOpacity
+          style={s.artworkBtn}
+          onPress={pickArtwork}
+          accessibilityRole="button"
+          accessibilityLabel={artworkUri ? 'Changer la pochette' : 'Ajouter une pochette'}
+        >
           {artworkUri ? (
             <>
               <Image source={{ uri: artworkUri }} style={s.artwork} contentFit="cover" />
@@ -187,6 +202,9 @@ export default function EditTrackScreen() {
                   key={p.id}
                   style={s.playlistRow}
                   onPress={() => inPl ? removeFromPlaylist(p.id, id) : addToPlaylist(p.id, id)}
+                  accessibilityRole="checkbox"
+                  accessibilityLabel={p.name}
+                  accessibilityState={{ checked: inPl }}
                 >
                   <Text style={s.playlistName}>{p.name}</Text>
                   <View style={checkboxStyle(inPl)}>

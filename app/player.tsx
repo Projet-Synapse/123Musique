@@ -177,7 +177,12 @@ export default function PlayerScreen() {
         <Text style={s.aiDesc}>
           Isolez voix, guitare, basse, batterie et plus encore grâce à l&apos;intelligence artificielle.
         </Text>
-        <TouchableOpacity style={s.aiBtn} onPress={() => {}}>
+        <TouchableOpacity
+          style={[s.aiBtn, { opacity: 0.5 }]}
+          disabled
+          accessibilityState={{ disabled: true }}
+          accessibilityLabel="Séparation d'instruments IA, bientôt disponible"
+        >
           <Text style={s.aiBtnText}>Bientôt disponible</Text>
         </TouchableOpacity>
       </View>
@@ -290,7 +295,14 @@ export default function PlayerScreen() {
 
       <View style={s.tabs}>
         {TABS.map(tab => (
-          <TouchableOpacity key={tab} style={tabStyle(activeTab === tab)} onPress={() => setActiveTab(tab)}>
+          <TouchableOpacity
+            key={tab}
+            style={tabStyle(activeTab === tab)}
+            onPress={() => setActiveTab(tab)}
+            accessibilityRole="tab"
+            accessibilityLabel={tab}
+            accessibilityState={{ selected: activeTab === tab }}
+          >
             <Text style={tabTextStyle(activeTab === tab)}>{tab}</Text>
           </TouchableOpacity>
         ))}
