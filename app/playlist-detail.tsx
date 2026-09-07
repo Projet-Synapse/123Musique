@@ -14,7 +14,7 @@ import { spacing, radius, fontSize } from '@/constants/theme';
 
 export default function PlaylistDetailScreen() {
   const { colors, accent } = useTheme();
-  const { playlists, tracks, renamePlaylist, removeFromPlaylist, addToPlaylist, playTrack } = useMusic();
+  const { playlists, tracks, renamePlaylist, removeFromPlaylist, addToPlaylist, playTrack, shuffle, toggleShuffle } = useMusic();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -56,6 +56,13 @@ export default function PlaylistDetailScreen() {
     setNewName('');
   };
 
+  const shufflePlay = () => {
+    if (playlistTracks.length === 0) return;
+    if (!shuffle) toggleShuffle();
+    const randIdx = Math.floor(Math.random() * playlistTracks.length);
+    playTrack(playlistTracks[randIdx], playlistTracks);
+  };
+
   const s = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     header: {
@@ -73,6 +80,7 @@ export default function PlaylistDetailScreen() {
       alignItems: 'center', justifyContent: 'center', marginLeft: spacing.xs,
     },
     renameBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', marginLeft: spacing.xs },
+    shuffleBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', marginLeft: spacing.xs },
     playAllBtn: {
       flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
       paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
@@ -125,23 +133,53 @@ export default function PlaylistDetailScreen() {
   return (
     <View style={s.container}>
       <View style={s.header}>
-        <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={s.backBtn}
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Retour"
+        >
           <MaterialIcons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <View style={s.headerInfo}>
           <Text style={s.headerTitle} numberOfLines={1}>{playlist.name}</Text>
           <Text style={s.headerCount}>{playlistTracks.length} titre{playlistTracks.length !== 1 ? 's' : ''}</Text>
         </View>
-        <TouchableOpacity style={s.renameBtn} onPress={() => { setNewName(playlist.name); setShowRename(true); }}>
+        <TouchableOpacity
+          style={s.renameBtn}
+          onPress={() => { setNewName(playlist.name); setShowRename(true); }}
+          accessibilityRole="button"
+          accessibilityLabel="Renommer la playlist"
+        >
           <MaterialIcons name="edit" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
         {playlistTracks.length > 0 && (
-          <TouchableOpacity style={s.playAllBtn} onPress={() => playTrack(playlistTracks[0], playlistTracks)}>
-            <MaterialIcons name="play-arrow" size={18} color="#FFF" />
-            <Text style={s.playAllText}>Lire tout</Text>
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity
+              style={s.shuffleBtn}
+              onPress={shufflePlay}
+              accessibilityRole="button"
+              accessibilityLabel="Lecture aléatoire de la playlist"
+            >
+              <MaterialIcons name="shuffle" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={s.playAllBtn}
+              onPress={() => playTrack(playlistTracks[0], playlistTracks)}
+              accessibilityRole="button"
+              accessibilityLabel="Lire toute la playlist"
+            >
+              <MaterialIcons name="play-arrow" size={18} color="#FFF" />
+              <Text style={s.playAllText}>Lire tout</Text>
+            </TouchableOpacity>
+          </>
         )}
-        <TouchableOpacity style={s.addBtn} onPress={() => { setAddSearch(''); setShowAddModal(true); }}>
+        <TouchableOpacity
+          style={s.addBtn}
+          onPress={() => { setAddSearch(''); setShowAddModal(true); }}
+          accessibilityRole="button"
+          accessibilityLabel="Ajouter des titres à la playlist"
+        >
           <MaterialIcons name="add" size={20} color="#FFF" />
         </TouchableOpacity>
       </View>
@@ -157,7 +195,12 @@ export default function PlaylistDetailScreen() {
           keyExtractor={item => item.id}
           contentContainerStyle={{ paddingBottom: 180 }}
           renderItem={({ item }) => (
-            <Pressable style={({ pressed }) => [s.trackItem, pressed && { opacity: 0.7 }]} onPress={() => playTrack(item, playlistTracks)}>
+            <Pressable
+              style={({ pressed }) => [s.trackItem, pressed && { opacity: 0.7 }]}
+              onPress={() => playTrack(item, playlistTracks)}
+              accessibilityRole="button"
+              accessibilityLabel={`Lire ${item.name}, ${item.artist}`}
+            >
               {item.artworkUri ? (
                 <Image source={{ uri: item.artworkUri }} style={s.artwork} contentFit="cover" />
               ) : (
@@ -169,7 +212,12 @@ export default function PlaylistDetailScreen() {
                 <Text style={s.trackName} numberOfLines={1}>{item.name}</Text>
                 <Text style={s.trackMeta} numberOfLines={1}>{item.artist}</Text>
               </View>
-              <TouchableOpacity style={s.removeBtn} onPress={() => removeFromPlaylist(id, item.id)}>
+              <TouchableOpacity
+                style={s.removeBtn}
+                onPress={() => removeFromPlaylist(id, item.id)}
+                accessibilityRole="button"
+                accessibilityLabel={`Retirer ${item.name} de la playlist`}
+              >
                 <MaterialIcons name="remove-circle-outline" size={22} color={colors.textMuted} />
               </TouchableOpacity>
             </Pressable>
@@ -184,7 +232,11 @@ export default function PlaylistDetailScreen() {
             <View style={s.sheetHeaderRow}>
               <Text style={s.sheetTitle}>Ajouter à la playlist</Text>
               {filteredAvailable.length > 0 && (
-                <TouchableOpacity onPress={handleAddAll}>
+                <TouchableOpacity
+                  onPress={handleAddAll}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Tout ajouter, ${filteredAvailable.length} titres`}
+                >
                   <Text style={s.addAllText}>Tout ajouter ({filteredAvailable.length})</Text>
                 </TouchableOpacity>
               )}
@@ -198,9 +250,15 @@ export default function PlaylistDetailScreen() {
                   placeholderTextColor={colors.textMuted}
                   value={addSearch}
                   onChangeText={setAddSearch}
+                  autoCorrect={false}
+                  returnKeyType="search"
                 />
                 {addSearch.length > 0 && (
-                  <TouchableOpacity onPress={() => setAddSearch('')}>
+                  <TouchableOpacity
+                    onPress={() => setAddSearch('')}
+                    accessibilityRole="button"
+                    accessibilityLabel="Effacer la recherche"
+                  >
                     <MaterialIcons name="close" size={16} color={colors.textMuted} />
                   </TouchableOpacity>
                 )}
@@ -215,14 +273,24 @@ export default function PlaylistDetailScreen() {
                 data={filteredAvailable}
                 keyExtractor={item => item.id}
                 renderItem={({ item }) => (
-                  <TouchableOpacity style={s.sheetTrack} onPress={() => { addToPlaylist(id, item.id); }}>
+                  <TouchableOpacity
+                    style={s.sheetTrack}
+                    onPress={() => { addToPlaylist(id, item.id); }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Ajouter ${item.name}, ${item.artist}`}
+                  >
                     <Text style={s.sheetTrackName} numberOfLines={1}>{item.name}</Text>
                     <Text style={{ fontSize: fontSize.xs, color: colors.textSecondary }}>{item.artist}</Text>
                   </TouchableOpacity>
                 )}
               />
             )}
-            <TouchableOpacity style={[s.cancelBtn, { marginTop: spacing.md }]} onPress={closeAddModal}>
+            <TouchableOpacity
+              style={[s.cancelBtn, { marginTop: spacing.md }]}
+              onPress={closeAddModal}
+              accessibilityRole="button"
+              accessibilityLabel="Fermer"
+            >
               <Text style={s.cancelText}>Fermer</Text>
             </TouchableOpacity>
           </View>
@@ -239,13 +307,25 @@ export default function PlaylistDetailScreen() {
               value={newName}
               onChangeText={setNewName}
               placeholderTextColor={colors.textMuted}
+              onSubmitEditing={handleRename}
+              returnKeyType="done"
               autoFocus
             />
             <View style={s.modalBtns}>
-              <TouchableOpacity style={s.cancelBtn} onPress={() => setShowRename(false)}>
+              <TouchableOpacity
+                style={s.cancelBtn}
+                onPress={() => setShowRename(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Annuler"
+              >
                 <Text style={s.cancelText}>Annuler</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={s.confirmBtn} onPress={handleRename}>
+              <TouchableOpacity
+                style={s.confirmBtn}
+                onPress={handleRename}
+                accessibilityRole="button"
+                accessibilityLabel="Renommer"
+              >
                 <Text style={s.confirmText}>Renommer</Text>
               </TouchableOpacity>
             </View>

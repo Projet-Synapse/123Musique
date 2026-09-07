@@ -98,7 +98,12 @@ export default function PlaylistsScreen() {
       <View style={s.header}>
         <View style={s.headerRow}>
           <Text style={s.title}>Playlists</Text>
-          <TouchableOpacity style={s.addBtn} onPress={() => setShowCreate(true)}>
+          <TouchableOpacity
+            style={s.addBtn}
+            onPress={() => setShowCreate(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Créer une playlist"
+          >
             <MaterialIcons name="add" size={22} color="#FFF" />
           </TouchableOpacity>
         </View>
@@ -123,6 +128,8 @@ export default function PlaylistsScreen() {
               <Pressable
                 style={({ pressed }) => [s.card, pressed && { opacity: 0.8 }]}
                 onPress={() => router.push({ pathname: '/playlist-detail', params: { id: item.id } })}
+                accessibilityRole="button"
+                accessibilityLabel={`${item.name}, ${count} titre${count !== 1 ? 's' : ''}`}
               >
                 <View style={[s.cardTop, { backgroundColor: col + '22' }]}>
                   <MaterialIcons name="queue-music" size={44} color={col} />
@@ -132,7 +139,12 @@ export default function PlaylistsScreen() {
                   <Text style={s.cardCount}>{count} titre{count !== 1 ? 's' : ''}</Text>
                 </View>
                 <View style={s.cardActions}>
-                  <TouchableOpacity style={s.actionBtn} onPress={() => handleDelete(item.id, item.name)}>
+                  <TouchableOpacity
+                    style={s.actionBtn}
+                    onPress={() => handleDelete(item.id, item.name)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Supprimer la playlist ${item.name}`}
+                  >
                     <MaterialIcons name="delete-outline" size={18} color={colors.textMuted} />
                   </TouchableOpacity>
                 </View>
@@ -152,13 +164,25 @@ export default function PlaylistsScreen() {
               placeholderTextColor={colors.textMuted}
               value={newName}
               onChangeText={setNewName}
+              onSubmitEditing={handleCreate}
+              returnKeyType="done"
               autoFocus
             />
             <View style={s.modalBtns}>
-              <TouchableOpacity style={s.cancelBtn} onPress={() => { setShowCreate(false); setNewName(''); }}>
+              <TouchableOpacity
+                style={s.cancelBtn}
+                onPress={() => { setShowCreate(false); setNewName(''); }}
+                accessibilityRole="button"
+                accessibilityLabel="Annuler"
+              >
                 <Text style={s.cancelText}>Annuler</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={s.confirmBtn} onPress={handleCreate}>
+              <TouchableOpacity
+                style={s.confirmBtn}
+                onPress={handleCreate}
+                accessibilityRole="button"
+                accessibilityLabel="Créer la playlist"
+              >
                 <Text style={s.confirmText}>Créer</Text>
               </TouchableOpacity>
             </View>

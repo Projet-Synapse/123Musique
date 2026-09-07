@@ -91,6 +91,7 @@ export default function SettingsScreen() {
                 onValueChange={toggleMode}
                 trackColor={{ false: colors.border, true: accent }}
                 thumbColor="#FFF"
+                accessibilityLabel="Thème sombre"
               />
             </View>
             <View style={[s.row, s.rowLast, { flexDirection: 'column', alignItems: 'flex-start' }]}>
@@ -106,6 +107,9 @@ export default function SettingsScreen() {
                     key={opt.value}
                     style={accentDotStyle(opt.value, accent === opt.value)}
                     onPress={() => setAccent(opt.value)}
+                    accessibilityRole="radio"
+                    accessibilityLabel={`Accent ${opt.label}`}
+                    accessibilityState={{ selected: accent === opt.value }}
                   >
                     {accent === opt.value && <MaterialIcons name="check" size={18} color="#FFF" />}
                   </TouchableOpacity>

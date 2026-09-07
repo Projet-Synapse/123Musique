@@ -17,7 +17,7 @@ import { spacing, radius, fontSize } from '@/constants/theme';
 export default function LibraryScreen() {
   const { colors, accent, mode } = useTheme();
   const {
-    tracks, addTrack, removeTrack, playTrack, currentTrack, isPlaying,
+    tracks, addTracks, removeTrack, playTrack, currentTrack, isPlaying,
     playlists, addToPlaylist, removeFromPlaylist, createPlaylist,
     shuffle, toggleShuffle,
   } = useMusic();
@@ -64,24 +64,23 @@ export default function LibraryScreen() {
         copyToCacheDirectory: true,
       });
       if (result.canceled) return;
-      result.assets.forEach(asset => {
-        const track: Track = {
-          id: `${Date.now()}_${Math.random().toString(36).slice(2)}`,
-          uri: asset.uri,
-          name: asset.name.replace(/\.[^/.]+$/, ''),
-          artist: 'Artiste inconnu',
-          album: 'Album inconnu',
-          year: '',
-          description: '',
-          artworkUri: undefined,
-          dateAdded: Date.now(),
-        };
-        addTrack(track);
-      });
+      const now = Date.now();
+      const imported: Track[] = result.assets.map((asset, i) => ({
+        id: `${now}_${i}_${Math.random().toString(36).slice(2)}`,
+        uri: asset.uri,
+        name: asset.name.replace(/\.[^/.]+$/, ''),
+        artist: 'Artiste inconnu',
+        album: 'Album inconnu',
+        year: '',
+        description: '',
+        artworkUri: undefined,
+        dateAdded: now,
+      }));
+      addTracks(imported);
     } catch {
       showAlert('Erreur', "Impossible d'importer ce fichier.");
     }
-  }, [addTrack, showAlert]);
+  }, [addTracks, showAlert]);
 
   const closePlaylistPicker = () => {
     setPlaylistPickerTrack(null);
@@ -209,6 +208,8 @@ export default function LibraryScreen() {
       <Pressable
         style={({ pressed }) => [s.trackItem, pressed && { opacity: 0.7 }]}
         onPress={() => playTrack(item, filtered)}
+        accessibilityRole="button"
+        accessibilityLabel={`Lire ${item.name}, ${item.artist}`}
       >
         {isActive && isPlaying && <View style={s.nowPlayingBar} />}
         {item.artworkUri ? (
@@ -258,7 +259,12 @@ export default function LibraryScreen() {
       <View style={s.header}>
         <View style={s.headerRow}>
           <Text style={s.title}>Bibliothèque</Text>
-          <TouchableOpacity style={s.importBtn} onPress={importMusic}>
+          <TouchableOpacity
+            style={s.importBtn}
+            onPress={importMusic}
+            accessibilityRole="button"
+            accessibilityLabel="Importer de la musique"
+          >
             <MaterialIcons name="add" size={18} color="#FFF" />
             <Text style={s.importBtnText}>Importer</Text>
           </TouchableOpacity>
@@ -271,21 +277,35 @@ export default function LibraryScreen() {
             placeholderTextColor={colors.textMuted}
             value={search}
             onChangeText={setSearch}
+            autoCorrect={false}
+            returnKeyType="search"
           />
           {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')}>
+            <TouchableOpacity
+              onPress={() => setSearch('')}
+              accessibilityRole="button"
+              accessibilityLabel="Effacer la recherche"
+            >
               <MaterialIcons name="close" size={18} color={colors.textMuted} />
             </TouchableOpacity>
           )}
         </View>
         <View style={s.sortRow}>
-          {(['date', 'name', 'artist'] as const).map(k => (
-            <TouchableOpacity key={k} style={sortBtnStyle(sortBy === k)} onPress={() => setSortBy(k)}>
-              <Text style={sortBtnTextStyle(sortBy === k)}>
-                {k === 'date' ? 'Récent' : k === 'name' ? 'Nom' : 'Artiste'}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          {(['date', 'name', 'artist'] as const).map(k => {
+            const label = k === 'date' ? 'Récent' : k === 'name' ? 'Nom' : 'Artiste';
+            return (
+              <TouchableOpacity
+                key={k}
+                style={sortBtnStyle(sortBy === k)}
+                onPress={() => setSortBy(k)}
+                accessibilityRole="button"
+                accessibilityLabel={`Trier par ${label}`}
+                accessibilityState={{ selected: sortBy === k }}
+              >
+                <Text style={sortBtnTextStyle(sortBy === k)}>{label}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
         {filtered.length > 0 && (
           <View style={s.quickActionsRow}>
@@ -316,7 +336,12 @@ export default function LibraryScreen() {
           <Image source={require('@/assets/images/empty-music.png')} style={s.emptyImage} contentFit="contain" />
           <Text style={s.emptyTitle}>Aucune musique</Text>
           <Text style={s.emptySubtitle}>Importez vos fichiers MP3 ou audio depuis votre appareil.</Text>
-          <TouchableOpacity style={s.emptyImportBtn} onPress={importMusic}>
+          <TouchableOpacity
+            style={s.emptyImportBtn}
+            onPress={importMusic}
+            accessibilityRole="button"
+            accessibilityLabel="Importer de la musique"
+          >
             <MaterialIcons name="add" size={18} color="#FFF" />
             <Text style={s.emptyImportBtnText}>Importer de la musique</Text>
           </TouchableOpacity>
@@ -353,6 +378,9 @@ export default function LibraryScreen() {
                         if (included) removeFromPlaylist(p.id, playlistPickerTrack.id);
                         else addToPlaylist(p.id, playlistPickerTrack.id);
                       }}
+                      accessibilityRole="checkbox"
+                      accessibilityLabel={p.name}
+                      accessibilityState={{ checked: included }}
                     >
                       <MaterialIcons
                         name={included ? 'check-box' : 'check-box-outline-blank'}
@@ -384,7 +412,12 @@ export default function LibraryScreen() {
                 <MaterialIcons name="add" size={20} color="#FFF" />
               </TouchableOpacity>
             </View>
-            <TouchableOpacity style={s.doneBtn} onPress={closePlaylistPicker}>
+            <TouchableOpacity
+              style={s.doneBtn}
+              onPress={closePlaylistPicker}
+              accessibilityRole="button"
+              accessibilityLabel="Fermer"
+            >
               <Text style={s.doneBtnText}>Fermer</Text>
             </TouchableOpacity>
           </View>

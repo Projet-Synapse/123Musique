@@ -43,6 +43,7 @@ interface MusicContextType {
   shuffle: boolean;
   repeatMode: RepeatMode;
   addTrack: (track: Track) => void;
+  addTracks: (tracks: Track[]) => void;
   removeTrack: (id: string) => void;
   updateTrack: (id: string, updates: Partial<Track>) => void;
   playTrack: (track: Track, queue?: Track[]) => void;
@@ -121,6 +122,19 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   const addTrack = (track: Track) => {
     setTracks(prev => {
       const next = [track, ...prev];
+      saveTracks(next);
+      return next;
+    });
+  };
+
+  // Batched sibling of addTrack: importing several files at once should cost
+  // one state update and one AsyncStorage write, not one per file — looping
+  // addTrack over N files re-copies and re-persists the whole growing array
+  // N times.
+  const addTracks = (newTracks: Track[]) => {
+    if (newTracks.length === 0) return;
+    setTracks(prev => {
+      const next = [...newTracks, ...prev];
       saveTracks(next);
       return next;
     });
@@ -316,7 +330,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     <MusicContext.Provider value={{
       tracks, playlists, currentTrack, isPlaying, position, duration, queue, effects,
       shuffle, repeatMode,
-      addTrack, removeTrack, updateTrack,
+      addTrack, addTracks, removeTrack, updateTrack,
       playTrack, pauseTrack, resumeTrack, seekTo, nextTrack, prevTrack,
       toggleShuffle, cycleRepeatMode,
       createPlaylist, deletePlaylist, renamePlaylist, addToPlaylist, removeFromPlaylist,
