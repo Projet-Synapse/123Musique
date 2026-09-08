@@ -4,18 +4,25 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Platform, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
+import { useMusic } from '@/contexts/MusicContext';
 import MiniPlayer from '@/components/feature/MiniPlayer';
+import { UpdateBanner } from '@/components';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const { colors, accent } = useTheme();
+  const { currentTrack } = useMusic();
+
+  const tabBarHeight = Platform.select({
+    ios: insets.bottom + 60,
+    android: insets.bottom + 60,
+    default: 70,
+  });
+  // Above the tab bar, and above the mini player when one is showing.
+  const bannerBottom = tabBarHeight + 8 + (currentTrack ? 62 : 0);
 
   const tabBarStyle = {
-    height: Platform.select({
-      ios: insets.bottom + 60,
-      android: insets.bottom + 60,
-      default: 70,
-    }),
+    height: tabBarHeight,
     paddingTop: 8,
     paddingBottom: Platform.select({
       ios: insets.bottom + 8,
@@ -61,6 +68,13 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
+      {/* Floats above the tab bar / mini player so it is visible from any tab. */}
+      <View
+        style={{ position: 'absolute', left: 0, right: 0, bottom: bannerBottom }}
+        pointerEvents="box-none"
+      >
+        <UpdateBanner />
+      </View>
       <MiniPlayer />
     </View>
   );

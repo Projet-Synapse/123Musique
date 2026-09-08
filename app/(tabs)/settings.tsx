@@ -1,15 +1,21 @@
 // Powered by OnSpace.AI
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, ViewStyle } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, ViewStyle, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
 import { useMusic } from '@/contexts/MusicContext';
+import { useUpdates } from '@/hooks/useUpdates';
+import { RELEASES_URL } from '@/constants/config';
 import { ACCENT_OPTIONS, spacing, radius, fontSize } from '@/constants/theme';
+
+// Le thème n'expose pas de couleur d'erreur ; on reprend le rouge des accents.
+const ERROR_COLOR = '#EF4444';
 
 export default function SettingsScreen() {
   const { colors, accent, mode, toggleMode, setAccent } = useTheme();
   const { tracks, playlists } = useMusic();
+  const updates = useUpdates();
   const insets = useSafeAreaInsets();
 
   const s = StyleSheet.create({
@@ -38,6 +44,15 @@ export default function SettingsScreen() {
     statLabel: { fontSize: fontSize.xs, color: colors.textSecondary },
     divider: { width: 1, backgroundColor: colors.border, marginVertical: spacing.sm },
     statsRow: { flexDirection: 'row' },
+    rowDescription: { fontSize: fontSize.xs, color: colors.textSecondary, marginTop: 2 },
+    releaseNotes: {
+      paddingHorizontal: spacing.md, paddingBottom: spacing.md,
+      fontSize: fontSize.sm, color: colors.textSecondary, lineHeight: 18,
+    },
+    updateError: {
+      paddingHorizontal: spacing.md, paddingBottom: spacing.md,
+      fontSize: fontSize.sm, color: ERROR_COLOR,
+    },
   });
 
   // Kept outside StyleSheet.create: a function value mixed into that call collapses
@@ -119,6 +134,96 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* Updates */}
+        <View style={s.section}>
+          <Text style={s.sectionTitle}>Mises à jour</Text>
+          <View style={s.card}>
+            <View style={s.row}>
+              <View style={[s.rowIcon, { backgroundColor: accent + '22' }]}>
+                <MaterialIcons name="system-update" size={20} color={accent} />
+              </View>
+              <Text style={s.rowLabel}>Version installée</Text>
+              <Text style={s.rowValue}>v{updates.currentVersion}</Text>
+            </View>
+            <View style={s.row}>
+              <View style={[s.rowIcon, { backgroundColor: accent + '22' }]}>
+                <MaterialIcons name="info-outline" size={20} color={accent} />
+              </View>
+              <Text style={s.rowLabel}>Statut</Text>
+              <Text style={s.rowValue}>{updateStatusLabel(updates)}</Text>
+            </View>
+            {updates.releaseNotes && updates.stage === 'available' ? (
+              <Text style={s.releaseNotes} numberOfLines={6}>
+                {updates.releaseNotes}
+              </Text>
+            ) : null}
+            {updates.error ? <Text style={s.updateError}>{updates.error}</Text> : null}
+            <TouchableOpacity
+              style={s.row}
+              onPress={() => void updates.check()}
+              disabled={updates.stage === 'checking'}
+              accessibilityRole="button"
+              accessibilityLabel="Rechercher une mise à jour"
+            >
+              <View style={[s.rowIcon, { backgroundColor: accent + '22' }]}>
+                <MaterialIcons name="search" size={20} color={accent} />
+              </View>
+              <Text style={s.rowLabel}>
+                {updates.stage === 'checking' ? 'Vérification…' : 'Rechercher une mise à jour'}
+              </Text>
+              <MaterialIcons name="chevron-right" size={22} color={colors.textMuted} />
+            </TouchableOpacity>
+            {(updates.stage === 'available' || updates.stage === 'ready') && updates.canSelfInstall ? (
+              <TouchableOpacity
+                style={s.row}
+                onPress={() => void updates.applyUpdate()}
+                accessibilityRole="button"
+                accessibilityLabel="Installer la mise à jour"
+              >
+                <View style={[s.rowIcon, { backgroundColor: accent }]}>
+                  <MaterialIcons name="restart-alt" size={20} color="#FFF" />
+                </View>
+                <Text style={s.rowLabel}>
+                  {updates.stage === 'ready' ? 'Redémarrer et installer' : 'Installer et redémarrer'}
+                </Text>
+                <MaterialIcons name="chevron-right" size={22} color={colors.textMuted} />
+              </TouchableOpacity>
+            ) : updates.stage === 'available' && !updates.canSelfInstall ? (
+              <TouchableOpacity
+                style={s.row}
+                onPress={() => void Linking.openURL(updates.downloadUrl ?? RELEASES_URL)}
+                accessibilityRole="button"
+                accessibilityLabel="Ouvrir la page de téléchargement"
+              >
+                <View style={[s.rowIcon, { backgroundColor: accent + '22' }]}>
+                  <MaterialIcons name="open-in-new" size={20} color={accent} />
+                </View>
+                <Text style={s.rowLabel}>Page de téléchargement</Text>
+                <MaterialIcons name="chevron-right" size={22} color={colors.textMuted} />
+              </TouchableOpacity>
+            ) : null}
+            <View style={[s.row, s.rowLast]}>
+              <View style={[s.rowIcon, { backgroundColor: accent + '22' }]}>
+                <MaterialIcons name="autorenew" size={20} color={accent} />
+              </View>
+              <View style={{ flex: 1, marginRight: spacing.sm }}>
+                <Text style={s.rowLabel}>Mise à jour automatique</Text>
+                <Text style={s.rowDescription}>
+                  Télécharge les nouvelles versions en arrière-plan et les installe à la fermeture de
+                  l&apos;application.
+                </Text>
+              </View>
+              <Switch
+                value={updates.autoUpdate}
+                onValueChange={updates.setAutoUpdate}
+                trackColor={{ false: colors.border, true: accent }}
+                thumbColor="#FFF"
+                accessibilityLabel="Mise à jour automatique"
+              />
+            </View>
+          </View>
+        </View>
+
         {/* About */}
         <View style={s.section}>
           <Text style={s.sectionTitle}>À propos</Text>
@@ -128,11 +233,30 @@ export default function SettingsScreen() {
                 <MaterialIcons name="music-note" size={20} color={accent} />
               </View>
               <Text style={s.rowLabel}>MusicBox</Text>
-              <Text style={s.rowValue}>v1.0.0</Text>
+              <Text style={s.rowValue}>v{updates.currentVersion}</Text>
             </View>
           </View>
         </View>
       </ScrollView>
     </View>
   );
+}
+
+function updateStatusLabel(update: ReturnType<typeof useUpdates>): string {
+  switch (update.stage) {
+    case 'checking':
+      return 'Vérification…';
+    case 'available':
+      return update.latestVersion ? `${update.latestVersion} disponible` : 'Mise à jour disponible';
+    case 'downloading':
+      return typeof update.progress === 'number' ? `Téléchargement ${update.progress}%` : 'Téléchargement…';
+    case 'ready':
+      return 'Prête à installer';
+    case 'error':
+      return 'Échec de la vérification';
+    case 'up-to-date':
+      return 'À jour';
+    default:
+      return '—';
+  }
 }
