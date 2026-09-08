@@ -8,7 +8,16 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "typecheck": "tsc --noEmit",
+    "build:web": "expo export --platform web --output-dir dist",
+    "desktop:install": "pnpm install --dir desktop",
+    "desktop:dev": "concurrently -k -n expo,electron -c cyan,magenta \"expo start --web --port 8081\" \"wait-on http://localhost:8081 && electron desktop\"",
+    "desktop:build": "node scripts/build-desktop.js",
+    "desktop:build:linux": "node scripts/build-desktop.js --linux",
+    "desktop:build:mac": "node scripts/build-desktop.js --mac",
+    "desktop:build:win": "node scripts/build-desktop.js --win",
+    "desktop:release": "node scripts/build-desktop.js --publish"
   },
   "dependencies": {
     "@expo/metro-runtime": "5.0.4",
@@ -146,10 +155,15 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@types/react": "~19.0.10",
+    "@types/semver": "^7.8.0",
+    "concurrently": "^10.0.5",
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~9.2.0",
     "react-dev-inspector": "^2.0.1",
-    "typescript": "~5.8.3"
+    "typescript": "~5.8.3",
+    "wait-on": "^9.1.0"
   },
   "private": true
 }

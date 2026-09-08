@@ -1,0 +1,17 @@
+{
+  "name": "musique-desktop",
+  "productName": "123Musique",
+  "version": "0.2.0",
+  "description": "123Musique — bibliothèque musicale locale",
+  "main": "main.js",
+  "author": {
+    "name": "Projet-Synapse",
+    "email": "catelyn2332-design@users.noreply.github.com"
+  },
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "electron-log": "^5.2.0",
+    "electron-updater": "^6.3.9"
+  }
+}
