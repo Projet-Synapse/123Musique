@@ -37,3 +37,6 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
+
+# Artefacts locaux du plugin de sécurité Mimosa
+.mimosa/
