@@ -45,6 +45,7 @@ interface MusicContextType {
   addTrack: (track: Track) => void;
   addTracks: (tracks: Track[]) => void;
   removeTrack: (id: string) => void;
+  removeTracks: (ids: string[]) => void;
   updateTrack: (id: string, updates: Partial<Track>) => void;
   playTrack: (track: Track, queue?: Track[]) => void;
   pauseTrack: () => void;
@@ -58,6 +59,7 @@ interface MusicContextType {
   deletePlaylist: (id: string) => void;
   renamePlaylist: (id: string, name: string) => void;
   addToPlaylist: (playlistId: string, trackId: string) => void;
+  addTracksToPlaylist: (playlistId: string, trackIds: string[]) => void;
   removeFromPlaylist: (playlistId: string, trackId: string) => void;
   setEffects: (effects: Partial<AudioEffects>) => void;
   queue: Track[];
@@ -73,6 +75,7 @@ export function useMusic() {
 
 const TRACKS_KEY = 'music_tracks_v2';
 const PLAYLISTS_KEY = 'music_playlists_v2';
+const EFFECTS_KEY = 'music_effects_v1';
 
 export function MusicProvider({ children }: { children: ReactNode }) {
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -108,12 +111,17 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loadData = async () => {
-    const [tracksJson, playlistsJson] = await Promise.all([
+    const [tracksJson, playlistsJson, effectsJson] = await Promise.all([
       AsyncStorage.getItem(TRACKS_KEY),
       AsyncStorage.getItem(PLAYLISTS_KEY),
+      AsyncStorage.getItem(EFFECTS_KEY),
     ]);
     if (tracksJson) setTracks(JSON.parse(tracksJson));
     if (playlistsJson) setPlaylists(JSON.parse(playlistsJson));
+    // Only the playback speed is a real, audible effect today (pitch/reverb
+    // are still unwired placeholders) — restoring it is what actually
+    // matters so a chosen speed survives an app restart.
+    if (effectsJson) setEffectsState(prev => ({ ...prev, ...JSON.parse(effectsJson) }));
   };
 
   const saveTracks = (t: Track[]) => AsyncStorage.setItem(TRACKS_KEY, JSON.stringify(t));
@@ -152,6 +160,28 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       return next;
     });
     if (currentTrack?.id === id) {
+      pauseTrack();
+      setCurrentTrack(null);
+    }
+  };
+
+  // Batched sibling of removeTrack, mirroring addTracks: deleting a
+  // multi-select of tracks should cost one state update and one write to
+  // each store, not one per track.
+  const removeTracks = (ids: string[]) => {
+    if (ids.length === 0) return;
+    const idSet = new Set(ids);
+    setTracks(prev => {
+      const next = prev.filter(t => !idSet.has(t.id));
+      saveTracks(next);
+      return next;
+    });
+    setPlaylists(prev => {
+      const next = prev.map(p => ({ ...p, trackIds: p.trackIds.filter(tid => !idSet.has(tid)) }));
+      savePlaylists(next);
+      return next;
+    });
+    if (currentTrack && idSet.has(currentTrack.id)) {
       pauseTrack();
       setCurrentTrack(null);
     }
@@ -306,6 +336,21 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  // Batched sibling of addToPlaylist: adding a multi-select of tracks to a
+  // playlist should cost one state update and one write, not one per track.
+  const addTracksToPlaylist = (playlistId: string, trackIds: string[]) => {
+    if (trackIds.length === 0) return;
+    setPlaylists(prev => {
+      const next = prev.map(p => {
+        if (p.id !== playlistId) return p;
+        const toAdd = trackIds.filter(id => !p.trackIds.includes(id));
+        return toAdd.length === 0 ? p : { ...p, trackIds: [...p.trackIds, ...toAdd] };
+      });
+      savePlaylists(next);
+      return next;
+    });
+  };
+
   const removeFromPlaylist = (playlistId: string, trackId: string) => {
     setPlaylists(prev => {
       const next = prev.map(p =>
@@ -319,6 +364,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   const setEffects = async (newEffects: Partial<AudioEffects>) => {
     const updated = { ...effects, ...newEffects };
     setEffectsState(updated);
+    AsyncStorage.setItem(EFFECTS_KEY, JSON.stringify(updated));
     if (soundRef.current) {
       try {
         await soundRef.current.setRateAsync(updated.speed, true);
@@ -330,10 +376,10 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     <MusicContext.Provider value={{
       tracks, playlists, currentTrack, isPlaying, position, duration, queue, effects,
       shuffle, repeatMode,
-      addTrack, addTracks, removeTrack, updateTrack,
+      addTrack, addTracks, removeTrack, removeTracks, updateTrack,
       playTrack, pauseTrack, resumeTrack, seekTo, nextTrack, prevTrack,
       toggleShuffle, cycleRepeatMode,
-      createPlaylist, deletePlaylist, renamePlaylist, addToPlaylist, removeFromPlaylist,
+      createPlaylist, deletePlaylist, renamePlaylist, addToPlaylist, addTracksToPlaylist, removeFromPlaylist,
       setEffects,
     }}>
       {children}
