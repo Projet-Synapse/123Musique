@@ -12,9 +12,17 @@ import { useTheme } from '@/hooks/useTheme';
 import { useMusic, Track } from '@/contexts/MusicContext';
 import { spacing, radius, fontSize } from '@/constants/theme';
 
+function formatDuration(ms?: number): string {
+  if (!ms || ms <= 0) return '';
+  const total = Math.floor(ms / 1000);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 export default function PlaylistDetailScreen() {
   const { colors, accent } = useTheme();
-  const { playlists, tracks, renamePlaylist, removeFromPlaylist, addToPlaylist, playTrack, shuffle, toggleShuffle } = useMusic();
+  const { playlists, tracks, renamePlaylist, removeFromPlaylist, addToPlaylist, moveInPlaylist, playTrack, shuffle, toggleShuffle } = useMusic();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -97,6 +105,7 @@ export default function PlaylistDetailScreen() {
     trackName: { fontSize: fontSize.md, fontWeight: '600', color: colors.text },
     trackMeta: { fontSize: fontSize.xs, color: colors.textSecondary },
     removeBtn: { padding: spacing.xs },
+    reorderBtn: { padding: 2, opacity: 0.9 },
     empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xxl },
     emptyText: { fontSize: fontSize.lg, fontWeight: '600', color: colors.textSecondary, textAlign: 'center' },
     modal: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
@@ -147,6 +156,7 @@ export default function PlaylistDetailScreen() {
         </View>
         <TouchableOpacity
           style={s.renameBtn}
+          hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
           onPress={() => { setNewName(playlist.name); setShowRename(true); }}
           accessibilityRole="button"
           accessibilityLabel="Renommer la playlist"
@@ -157,6 +167,7 @@ export default function PlaylistDetailScreen() {
           <>
             <TouchableOpacity
               style={s.shuffleBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
               onPress={shufflePlay}
               accessibilityRole="button"
               accessibilityLabel="Lecture aléatoire de la playlist"
@@ -194,7 +205,7 @@ export default function PlaylistDetailScreen() {
           data={playlistTracks}
           keyExtractor={item => item.id}
           contentContainerStyle={{ paddingBottom: 180 }}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <Pressable
               style={({ pressed }) => [s.trackItem, pressed && { opacity: 0.7 }]}
               onPress={() => playTrack(item, playlistTracks)}
@@ -210,10 +221,35 @@ export default function PlaylistDetailScreen() {
               )}
               <View style={s.trackInfo}>
                 <Text style={s.trackName} numberOfLines={1}>{item.name}</Text>
-                <Text style={s.trackMeta} numberOfLines={1}>{item.artist}</Text>
+                <Text style={s.trackMeta} numberOfLines={1}>
+                  {item.artist}{item.duration ? ` · ${formatDuration(item.duration)}` : ''}
+                </Text>
               </View>
               <TouchableOpacity
+                style={s.reorderBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                disabled={index === 0}
+                onPress={() => moveInPlaylist(id, index, index - 1)}
+                accessibilityRole="button"
+                accessibilityLabel={`Déplacer ${item.name} vers le haut`}
+                accessibilityState={{ disabled: index === 0 }}
+              >
+                <MaterialIcons name="keyboard-arrow-up" size={22} color={index === 0 ? colors.border : colors.textSecondary} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={s.reorderBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                disabled={index === playlistTracks.length - 1}
+                onPress={() => moveInPlaylist(id, index, index + 1)}
+                accessibilityRole="button"
+                accessibilityLabel={`Déplacer ${item.name} vers le bas`}
+                accessibilityState={{ disabled: index === playlistTracks.length - 1 }}
+              >
+                <MaterialIcons name="keyboard-arrow-down" size={22} color={index === playlistTracks.length - 1 ? colors.border : colors.textSecondary} />
+              </TouchableOpacity>
+              <TouchableOpacity
                 style={s.removeBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                 onPress={() => removeFromPlaylist(id, item.id)}
                 accessibilityRole="button"
                 accessibilityLabel={`Retirer ${item.name} de la playlist`}
@@ -298,7 +334,7 @@ export default function PlaylistDetailScreen() {
       </Modal>
 
       {/* Rename modal */}
-      <Modal visible={showRename} transparent animationType="slide">
+      <Modal visible={showRename} transparent animationType="slide" onRequestClose={() => setShowRename(false)}>
         <View style={s.modal}>
           <View style={[s.sheet, { maxHeight: undefined }]}>
             <Text style={s.sheetTitle}>Renommer la playlist</Text>

@@ -228,12 +228,23 @@ export default function SettingsScreen() {
         <View style={s.section}>
           <Text style={s.sectionTitle}>À propos</Text>
           <View style={s.card}>
-            <View style={[s.row, s.rowLast]}>
+            <View style={s.row}>
               <View style={[s.rowIcon, { backgroundColor: accent + '22' }]}>
                 <MaterialIcons name="music-note" size={20} color={accent} />
               </View>
-              <Text style={s.rowLabel}>MusicBox</Text>
+              <Text style={s.rowLabel}>123Musique</Text>
               <Text style={s.rowValue}>v{updates.currentVersion}</Text>
+            </View>
+            <View style={[s.row, s.rowLast]}>
+              <View style={[s.rowIcon, { backgroundColor: accent + '22' }]}>
+                <MaterialIcons name="keyboard" size={20} color={accent} />
+              </View>
+              <View style={{ flex: 1, marginRight: spacing.sm }}>
+                <Text style={s.rowLabel}>Raccourcis clavier (desktop)</Text>
+                <Text style={s.rowDescription}>
+                  Espace : lecture / pause · ← → : reculer / avancer de 10 s · ↑ ↓ : volume
+                </Text>
+              </View>
             </View>
           </View>
         </View>

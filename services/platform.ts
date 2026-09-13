@@ -27,6 +27,8 @@ export type DesktopUpdateEvent =
   | { type: 'error'; message: string };
 
 declare global {
+  // `var` is the required form for ambient global declarations in TS.
+  // eslint-disable-next-line no-var
   var musiqueDesktop: DesktopBridge | undefined;
 }
 

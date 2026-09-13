@@ -57,7 +57,9 @@ export interface AuthContextType {
   refreshSession: () => Promise<void>;
 }
 
-export interface AuthConfig {
+// Named ...Options to avoid clashing with core's AuthConfig when both modules
+// are star-exported from template/index.ts.
+export interface AuthConfigOptions {
   supabaseUrl: string;
   supabaseAnonKey: string;
   profileTableName?: string;

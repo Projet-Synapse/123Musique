@@ -11,7 +11,7 @@ import { spacing, radius, fontSize } from '@/constants/theme';
 
 export default function MiniPlayer() {
   const { colors, accent } = useTheme();
-  const { currentTrack, isPlaying, pauseTrack, resumeTrack, nextTrack } = useMusic();
+  const { currentTrack, isPlaying, position, duration, pauseTrack, resumeTrack, nextTrack } = useMusic();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -19,6 +19,7 @@ export default function MiniPlayer() {
 
   // Mini player sits just above the tab bar
   const tabBarHeight = insets.bottom + 60;
+  const progress = duration > 0 ? Math.min(100, (position / duration) * 100) : 0;
 
   const s = StyleSheet.create({
     container: {
@@ -31,6 +32,7 @@ export default function MiniPlayer() {
       paddingHorizontal: spacing.sm, paddingVertical: spacing.xs,
       shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 12, shadowOffset: { width: 0, height: 4 },
       elevation: 12,
+      overflow: 'hidden',
     },
     artwork: { width: 44, height: 44, borderRadius: radius.sm, backgroundColor: colors.surface },
     artworkPlaceholder: {
@@ -48,9 +50,9 @@ export default function MiniPlayer() {
     skipBtn: { padding: spacing.xs },
     progressBar: {
       position: 'absolute', bottom: 0, left: 0, right: 0,
-      height: 2, backgroundColor: colors.border, borderBottomLeftRadius: radius.lg,
-      borderBottomRightRadius: radius.lg, overflow: 'hidden',
+      height: 2, backgroundColor: colors.border,
     },
+    progressFill: { height: 2, backgroundColor: accent },
   });
 
   return (
@@ -82,12 +84,16 @@ export default function MiniPlayer() {
         </TouchableOpacity>
         <TouchableOpacity
           style={s.skipBtn}
+          hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
           onPress={e => { e.stopPropagation(); nextTrack(); }}
           accessibilityRole="button"
           accessibilityLabel="Piste suivante"
         >
           <MaterialIcons name="skip-next" size={26} color={colors.text} />
         </TouchableOpacity>
+      </View>
+      <View style={s.progressBar} pointerEvents="none">
+        <View style={[s.progressFill, { width: `${progress}%` }]} />
       </View>
     </Pressable>
   );

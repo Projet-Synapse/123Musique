@@ -154,7 +154,7 @@ export default function PlaylistsScreen() {
         />
       )}
 
-      <Modal visible={showCreate} transparent animationType="slide">
+      <Modal visible={showCreate} transparent animationType="slide" onRequestClose={() => { setShowCreate(false); setNewName(''); }}>
         <View style={s.modal}>
           <View style={s.modalSheet}>
             <Text style={s.modalTitle}>Nouvelle playlist</Text>
