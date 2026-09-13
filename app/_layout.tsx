@@ -5,6 +5,7 @@ import { AlertProvider } from '@/template';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { MusicProvider } from '@/contexts/MusicContext';
 import { UpdateProvider } from '@/contexts/UpdateContext';
+import WebKeyboardShortcuts from '@/components/feature/WebKeyboardShortcuts';
 
 export default function RootLayout() {
   return (
@@ -13,6 +14,8 @@ export default function RootLayout() {
         <ThemeProvider>
           <UpdateProvider>
             <MusicProvider>
+              {/* Renders null on native — desktop/web playback keys only. */}
+              <WebKeyboardShortcuts />
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="player" options={{ presentation: 'modal', headerShown: false }} />

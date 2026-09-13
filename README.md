@@ -1,75 +1,47 @@
-# Welcome to OnSpace AI
+# 123Musique
 
-Onspace AI empowers anyone to turn ideas into powerful AI applications in minutes—no coding required. Our free, no-code platform enables effortless creation of custom AI apps; simply describe your vision and our agentic AI handles the rest. The onspace-app, built with React Native and Expo, demonstrates this capability—integrating popular third-party libraries to deliver seamless cross-platform performance across iOS, Android, and Web environments.
+Lecteur de musique local, hors-ligne et multiplateforme : importez vos fichiers audio (MP3 et autres), organisez-les en playlists, et reprenez la lecture exactement où vous l'aviez laissée.
 
-## Getting Started
+Construit avec Expo (React Native) pour Android, iOS et web, et embarqué dans une coquille Electron pour les versions desktop (Windows, macOS, Linux) avec mises à jour automatiques.
 
-### 1. Install Dependencies
+## Fonctionnalités
 
-```bash
-npm install
-# or
-yarn install
-```
+- **Bibliothèque locale** : import multiple via le sélecteur de fichiers (avec détection des doublons), extraction automatique des tags ID3 (titre, artiste, album, année, pochette) et de la durée.
+- **Lecture** : aléatoire, répétition (tout / titre), vitesse réglable, contrôle du volume, minuteur de sommeil, raccourcis clavier sur desktop (Espace, ← →, ↑ ↓).
+- **Reprise de session** : morceau en cours, position, file d'attente et modes de lecture sont restaurés au redémarrage.
+- **Playlists** : création, renommage, ajout/retrait, réordonnancement des titres.
+- **Favoris** : marquez des titres d'un cœur et filtrez la bibliothèque sur eux.
+- **File d'attente** : « Lire ensuite » et « Ajouter à la file » depuis la bibliothèque ; depuis le lecteur, voyez ce qui vient ensuite, sautez ou retirez des titres.
+- **Thèmes** : sombre/clair, six couleurs d'accent.
 
-### 2. Start the Project
-
-- Start the development server (choose your platform):
-
-```bash
-npm run start         # Start Expo development server
-npm run android       # Launch Android emulator
-npm run ios           # Launch iOS simulator
-npm run web           # Start the web version
-```
-
-- Reset the project (clear cache, etc.):
+## Démarrage
 
 ```bash
-npm run reset-project
+pnpm install
+pnpm start          # serveur Expo (choisir Android / iOS / web)
+pnpm lint           # ESLint
+pnpm typecheck      # TypeScript
 ```
 
-### 3. Lint the Code
+## Desktop (Electron)
 
 ```bash
-npm run lint
+pnpm desktop:dev            # dev : Expo web + Electron
+pnpm desktop:build          # build de l'installeur de la plateforme courante
+pnpm desktop:build:win      # ... ou ciblé : :mac, :linux
+pnpm desktop:release        # publie une release GitHub (electron-updater)
 ```
 
-## Main Dependencies
+## Android
 
-- React Native: 0.79.4
-- React: 19.0.0
-- Expo: ~53.0.12
-- Expo Router: ~5.1.0
-- Supabase: ^2.50.0
-- Other commonly used libraries:  
-  - @expo/vector-icons  
-  - react-native-paper  
-  - react-native-calendars  
-  - lottie-react-native  
-  - react-native-webview  
-  - and more
+Un workflow GitHub Actions construit un APK à chaque poussée sur `main` (voir `.github/workflows/build-android-apk.yml`).
 
-For a full list of dependencies, see [package.json](./package.json).
+## Structure
 
-## Development Tools
+- `app/` — écrans (expo-router) : bibliothèque, playlists, réglages, lecteur, détail playlist, édition de titre.
+- `contexts/` — état global : `MusicContext` (bibliothèque, lecture, persistance), `ThemeContext`, `UpdateContext`.
+- `services/` — extraction de métadonnées (`metadata.ts`), mises à jour.
+- `components/feature/` — mini-player, bannière de mise à jour, raccourcis clavier.
+- `desktop/` — processus principal et preload Electron.
 
-- TypeScript: ~5.8.3
-- ESLint: ^9.25.0
-- @babel/core: ^7.25.2
-
-## Contributing
-
-1. Fork this repository
-2. Create a new branch (`git checkout -b main`)
-3. Commit your changes (`git commit -am 'Add new feature'`)
-4. Push to the branch (`git push origin feature/your-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is private ("private": true). For collaboration inquiries, please contact the author.
-
----
-
-Feel free to add project screenshots, API documentation, feature descriptions, or any other information as needed.
+Ce projet est privé. Pour toute contribution, contactez l'auteur.
