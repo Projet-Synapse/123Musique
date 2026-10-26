@@ -3,7 +3,7 @@
 # desktop/package.json holds the (tiny) runtime dependency set that ships.
 appId: com.musique.app
 productName: 123Musique
-copyright: Copyright © 2026 123Musique
+copyright: Copyright © 2026 Catelyn2332
 
 directories:
   app: desktop
