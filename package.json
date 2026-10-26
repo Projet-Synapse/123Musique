@@ -2,6 +2,7 @@
   "name": "onspace-app",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "author": "Catelyn2332",
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
