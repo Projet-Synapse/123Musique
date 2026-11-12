@@ -93,7 +93,7 @@
     "expo-crypto": "^14.1.5",
     "expo-image-manipulator": "^13.1.7",
     "expo-local-authentication": "^16.0.5",
-    "expo-mail-composer": "^14.1.5",
+    "expo-mail-composer": "^57.0.1",
     "expo-network": "^7.1.5",
     "expo-screen-orientation": "^8.1.7",
     "expo-secure-store": "^14.2.3",
